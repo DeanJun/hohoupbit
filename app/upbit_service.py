@@ -38,7 +38,9 @@ async def get_current_price(ticker: str) -> float:
 async def _get_orderbook(ticker: str) -> dict:
     loop = asyncio.get_event_loop()
     result = await loop.run_in_executor(None, lambda: pyupbit.get_orderbook(ticker))
-    return result[0] if result else {}
+    if isinstance(result, list):
+        return result[0] if result else {}
+    return result or {}
 
 
 async def buy_market_order(ticker: str) -> dict:

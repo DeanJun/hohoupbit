@@ -27,9 +27,19 @@ async def webhook(request: Request):
         body = _json.loads(raw) if raw else {}
     except Exception:
         body = {}
-    action = body.get("action", "").lower()   # "buy" | "sell"
 
+    action = body.get("action", "").lower()
     raw_ticker = body.get("ticker") or body.get("symbol") or ""
+
+    # JSON 파싱 실패 또는 필드 없을 때 TradingView 기본 plain text 파싱
+    # 형식: "Strategy: order buy @ 0.5 filled on TAIKOKRW. New strategy position is 1"
+    if not action or not raw_ticker:
+        import re
+        text = raw.decode("utf-8", errors="replace")
+        m = re.search(r"(?:order|오더)\s+(buy|sell).*?(?:on|필드 온)\s+(\w+)", text, re.IGNORECASE)
+        if m:
+            action = m.group(1).lower()
+            raw_ticker = m.group(2)
     raw_ticker = raw_ticker.upper()
     for suffix in ("USDT", "USD", "BUSD", "PERP", "KRW"):
         if raw_ticker.endswith(suffix):
